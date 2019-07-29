@@ -1,26 +1,32 @@
-enum Node {
-    Node(Box<(i32, Option<Node>)>),
+enum Node<T> {
+    Node(Box<(T, Option<Node<T>>)>),
 }
 
-pub struct List {
-    head: Option<Node>,
+pub struct List<T> {
+    head: Option<Node<T>>,
 }
 
-impl List {
+impl<T> List<T> {
     pub fn new() -> Self {
         List { head: None }
     }
-    pub fn push(&mut self, item: i32) {
+    pub fn push(&mut self, item: T) {
         self.head = Some(Node::Node(Box::new((item, self.head.take()))));
     }
-    pub fn pop(&mut self) -> Option<i32> {
-        match self.head.take() {
-            None => None,
-            Some(Node::Node(boxed)) => {
-                let (item, node) = *boxed;
-                self.head = node;
-                Some(item)
-            }
+    pub fn pop(&mut self) -> Option<T> {
+        self.head.take().map(|Node::Node(boxed)| {
+            let (item, node) = *boxed;
+            self.head = node;
+            item
+        })
+    }
+}
+
+impl<T> Drop for List<T> {
+    fn drop(&mut self) {
+        let mut node = self.head.take();
+        while let Some(Node::Node(mut boxed)) = node {
+            node = boxed.1.take();
         }
     }
 }
