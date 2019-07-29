@@ -26,6 +26,34 @@ impl<T> List<T> {
     pub fn peek_mut(&mut self) -> Option<&mut T> {
         self.head.as_mut().map(|Node::Node(boxed)| &mut boxed.0)
     }
+    pub fn iter(&self) -> impl Iterator<Item = &'_ T> {
+        struct Iter<'a, T>(Option<&'a Node<T>>);
+        impl<'a, T> Iterator for Iter<'a, T> {
+            type Item = &'a T;
+            fn next(&mut self) -> Option<Self::Item> {
+                self.0.take().map(|Node::Node(boxed)| {
+                    let (item, node) = boxed.as_ref();
+                    self.0 = node.as_ref();
+                    item
+                })
+            }
+        }
+        Iter(self.head.as_ref())
+    }
+    pub fn iter_mut(&mut self) -> impl Iterator<Item = &'_ mut T> {
+        struct Iter<'a, T>(Option<&'a mut Node<T>>);
+        impl<'a, T> Iterator for Iter<'a, T> {
+            type Item = &'a mut T;
+            fn next(&mut self) -> Option<Self::Item> {
+                self.0.take().map(|Node::Node(boxed)| {
+                    let (item, node) = boxed.as_mut();
+                    self.0 = node.as_mut();
+                    item
+                })
+            }
+        }
+        Iter(self.head.as_mut())
+    }
 }
 
 pub struct ListIntoIter<T>(List<T>);
@@ -118,5 +146,29 @@ mod tests {
         for i in list {
             assert!(i >= 0 && i < 3);
         }
+    }
+    #[test]
+    fn iter() {
+        let mut list = List::new();
+        list.push(1);
+        list.push(2);
+        list.push(3);
+
+        let mut iter = list.iter();
+        assert_eq!(iter.next(), Some(&3));
+        assert_eq!(iter.next(), Some(&2));
+        assert_eq!(iter.next(), Some(&1));
+    }
+    #[test]
+    fn iter_mut() {
+        let mut list = List::new();
+        list.push(1);
+        list.push(2);
+        list.push(3);
+
+        let mut iter = list.iter_mut();
+        assert_eq!(iter.next(), Some(&mut 3));
+        assert_eq!(iter.next(), Some(&mut 2));
+        assert_eq!(iter.next(), Some(&mut 1));
     }
 }
