@@ -1,58 +1,54 @@
-enum Node<T> {
-    Node(Box<(T, Option<Node<T>>)>),
-}
+struct Node<T>(Box<(T, Option<Node<T>>)>);
 
-pub struct List<T> {
-    head: Option<Node<T>>,
-}
+pub struct List<T>(Option<Node<T>>);
 
 impl<T> List<T> {
     pub fn new() -> Self {
-        List { head: None }
+        List(None)
     }
     pub fn push(&mut self, item: T) {
-        self.head = Some(Node::Node(Box::new((item, self.head.take()))));
+        self.0 = Some(Node(Box::new((item, self.0.take()))));
     }
     pub fn pop(&mut self) -> Option<T> {
-        self.head.take().map(|Node::Node(node)| {
+        self.0.take().map(|Node(node)| {
             let (item, next) = *node;
-            self.head = next;
+            self.0 = next;
             item
         })
     }
     pub fn peek(&self) -> Option<&T> {
-        self.head.as_ref().map(|Node::Node(node)| &node.0)
+        self.0.as_ref().map(|Node(node)| &node.0)
     }
     pub fn peek_mut(&mut self) -> Option<&mut T> {
-        self.head.as_mut().map(|Node::Node(node)| &mut node.0)
+        self.0.as_mut().map(|Node(node)| &mut node.0)
     }
     pub fn iter(&self) -> impl Iterator<Item = &'_ T> {
         struct Iter<'a, T>(Option<&'a Node<T>>);
         impl<'a, T> Iterator for Iter<'a, T> {
             type Item = &'a T;
             fn next(&mut self) -> Option<Self::Item> {
-                self.0.take().map(|Node::Node(node)| {
+                self.0.take().map(|Node(node)| {
                     let (item, next) = node.as_ref();
                     self.0 = next.as_ref();
                     item
                 })
             }
         }
-        Iter(self.head.as_ref())
+        Iter(self.0.as_ref())
     }
     pub fn iter_mut(&mut self) -> impl Iterator<Item = &'_ mut T> {
         struct Iter<'a, T>(Option<&'a mut Node<T>>);
         impl<'a, T> Iterator for Iter<'a, T> {
             type Item = &'a mut T;
             fn next(&mut self) -> Option<Self::Item> {
-                self.0.take().map(|Node::Node(node)| {
+                self.0.take().map(|Node(node)| {
                     let (item, next) = node.as_mut();
                     self.0 = next.as_mut();
                     item
                 })
             }
         }
-        Iter(self.head.as_mut())
+        Iter(self.0.as_mut())
     }
 }
 
@@ -75,8 +71,8 @@ impl<T> IntoIterator for List<T> {
 
 impl<T> Drop for List<T> {
     fn drop(&mut self) {
-        let mut next = self.head.take();
-        while let Some(Node::Node(mut node)) = next {
+        let mut next = self.0.take();
+        while let Some(Node(mut node)) = next {
             next = node.1.take();
         }
     }
