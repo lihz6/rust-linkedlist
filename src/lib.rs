@@ -37,8 +37,8 @@ impl<T> List<T> {
         Iter(self.0.as_ref())
     }
     pub fn iter_mut(&mut self) -> impl Iterator<Item = &'_ mut T> {
-        struct Iter<'a, T>(Option<&'a mut Node<T>>);
-        impl<'a, T> Iterator for Iter<'a, T> {
+        struct IterMut<'a, T>(Option<&'a mut Node<T>>);
+        impl<'a, T> Iterator for IterMut<'a, T> {
             type Item = &'a mut T;
             fn next(&mut self) -> Option<Self::Item> {
                 self.0.take().map(|Node(node)| {
@@ -48,7 +48,7 @@ impl<T> List<T> {
                 })
             }
         }
-        Iter(self.0.as_mut())
+        IterMut(self.0.as_mut())
     }
 }
 
