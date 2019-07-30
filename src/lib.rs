@@ -14,26 +14,26 @@ impl<T> List<T> {
         self.head = Some(Node::Node(Box::new((item, self.head.take()))));
     }
     pub fn pop(&mut self) -> Option<T> {
-        self.head.take().map(|Node::Node(boxed)| {
-            let (item, node) = *boxed;
-            self.head = node;
+        self.head.take().map(|Node::Node(node)| {
+            let (item, next) = *node;
+            self.head = next;
             item
         })
     }
     pub fn peek(&self) -> Option<&T> {
-        self.head.as_ref().map(|Node::Node(boxed)| &boxed.0)
+        self.head.as_ref().map(|Node::Node(node)| &node.0)
     }
     pub fn peek_mut(&mut self) -> Option<&mut T> {
-        self.head.as_mut().map(|Node::Node(boxed)| &mut boxed.0)
+        self.head.as_mut().map(|Node::Node(node)| &mut node.0)
     }
     pub fn iter(&self) -> impl Iterator<Item = &'_ T> {
         struct Iter<'a, T>(Option<&'a Node<T>>);
         impl<'a, T> Iterator for Iter<'a, T> {
             type Item = &'a T;
             fn next(&mut self) -> Option<Self::Item> {
-                self.0.take().map(|Node::Node(boxed)| {
-                    let (item, node) = boxed.as_ref();
-                    self.0 = node.as_ref();
+                self.0.take().map(|Node::Node(node)| {
+                    let (item, next) = node.as_ref();
+                    self.0 = next.as_ref();
                     item
                 })
             }
@@ -45,9 +45,9 @@ impl<T> List<T> {
         impl<'a, T> Iterator for Iter<'a, T> {
             type Item = &'a mut T;
             fn next(&mut self) -> Option<Self::Item> {
-                self.0.take().map(|Node::Node(boxed)| {
-                    let (item, node) = boxed.as_mut();
-                    self.0 = node.as_mut();
+                self.0.take().map(|Node::Node(node)| {
+                    let (item, next) = node.as_mut();
+                    self.0 = next.as_mut();
                     item
                 })
             }
@@ -75,9 +75,9 @@ impl<T> IntoIterator for List<T> {
 
 impl<T> Drop for List<T> {
     fn drop(&mut self) {
-        let mut node = self.head.take();
-        while let Some(Node::Node(mut boxed)) = node {
-            node = boxed.1.take();
+        let mut next = self.head.take();
+        while let Some(Node::Node(mut node)) = next {
+            next = node.1.take();
         }
     }
 }
