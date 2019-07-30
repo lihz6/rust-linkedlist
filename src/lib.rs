@@ -22,68 +22,65 @@ impl<T> List<T> {
     pub fn peek_mut(&mut self) -> Option<&mut T> {
         self.0.as_mut().map(|Node(node)| &mut node.0)
     }
-    pub fn iter(&self) -> IntoIter<Option<&'_ Node<T>>> {
-        IntoIter(self.0.as_ref())
+    pub fn iter(&self) -> impl Iterator<Item = &'_ T> {
+        self.into_iter()
     }
-    pub fn iter_mut(&mut self) -> IntoIter<Option<&'_ mut Node<T>>> {
-        IntoIter(self.0.as_mut())
+    pub fn iter_mut(&mut self) -> impl Iterator<Item = &'_ mut T> {
+        self.into_iter()
     }
 }
 
 pub struct IntoIter<T>(T);
 
 // for i in &list
-impl<'a, T> Iterator for IntoIter<Option<&'a Node<T>>> {
-    type Item = &'a T;
-    fn next(&mut self) -> Option<Self::Item> {
-        self.0.take().map(|Node(node)| {
-            let (item, next) = node.as_ref();
-            self.0 = next.as_ref();
-            item
-        })
-    }
-}
-
 impl<'a, T> IntoIterator for &'a List<T> {
     type Item = &'a T;
     type IntoIter = IntoIter<Option<&'a Node<T>>>;
     fn into_iter(self) -> Self::IntoIter {
-        self.iter()
+        impl<'a, T> Iterator for IntoIter<Option<&'a Node<T>>> {
+            type Item = &'a T;
+            fn next(&mut self) -> Option<Self::Item> {
+                self.0.take().map(|Node(node)| {
+                    let (item, next) = node.as_ref();
+                    self.0 = next.as_ref();
+                    item
+                })
+            }
+        }
+        IntoIter(self.0.as_ref())
     }
 }
 
 // for i in &mut list
-impl<'a, T> Iterator for IntoIter<Option<&'a mut Node<T>>> {
-    type Item = &'a mut T;
-    fn next(&mut self) -> Option<Self::Item> {
-        self.0.take().map(|Node(node)| {
-            let (item, next) = node.as_mut();
-            self.0 = next.as_mut();
-            item
-        })
-    }
-}
-
 impl<'a, T> IntoIterator for &'a mut List<T> {
     type Item = &'a mut T;
     type IntoIter = IntoIter<Option<&'a mut Node<T>>>;
     fn into_iter(self) -> Self::IntoIter {
-        self.iter_mut()
+        impl<'a, T> Iterator for IntoIter<Option<&'a mut Node<T>>> {
+            type Item = &'a mut T;
+            fn next(&mut self) -> Option<Self::Item> {
+                self.0.take().map(|Node(node)| {
+                    let (item, next) = node.as_mut();
+                    self.0 = next.as_mut();
+                    item
+                })
+            }
+        }
+        IntoIter(self.0.as_mut())
     }
 }
 
 // for i in list
-impl<T> Iterator for IntoIter<List<T>> {
-    type Item = T;
-    fn next(&mut self) -> Option<Self::Item> {
-        self.0.pop()
-    }
-}
-
 impl<T> IntoIterator for List<T> {
     type Item = T;
     type IntoIter = IntoIter<List<T>>;
     fn into_iter(self) -> Self::IntoIter {
+        impl<T> Iterator for IntoIter<List<T>> {
+            type Item = T;
+            fn next(&mut self) -> Option<Self::Item> {
+                self.0.pop()
+            }
+        }
         IntoIter(self)
     }
 }
