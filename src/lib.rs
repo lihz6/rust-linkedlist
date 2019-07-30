@@ -1,4 +1,4 @@
-struct Node<T>(Box<(T, Option<Node<T>>)>);
+pub struct Node<T>(Box<(T, Option<Node<T>>)>);
 
 pub struct List<T>(Option<Node<T>>);
 
@@ -22,17 +22,18 @@ impl<T> List<T> {
     pub fn peek_mut(&mut self) -> Option<&mut T> {
         self.0.as_mut().map(|Node(node)| &mut node.0)
     }
-    pub fn iter(&self) -> Iter<'_, T> {
-        Iter(self.0.as_ref())
+    pub fn iter(&self) -> IntoIter<Option<&'_ Node<T>>> {
+        IntoIter(self.0.as_ref())
     }
-    pub fn iter_mut(&mut self) -> IterMut<'_, T> {
-        IterMut(self.0.as_mut())
+    pub fn iter_mut(&mut self) -> IntoIter<Option<&'_ mut Node<T>>> {
+        IntoIter(self.0.as_mut())
     }
 }
 
-pub struct Iter<'a, T>(Option<&'a Node<T>>);
+pub struct IntoIter<T>(T);
 
-impl<'a, T> Iterator for Iter<'a, T> {
+// for i in &list
+impl<'a, T> Iterator for IntoIter<Option<&'a Node<T>>> {
     type Item = &'a T;
     fn next(&mut self) -> Option<Self::Item> {
         self.0.take().map(|Node(node)| {
@@ -45,15 +46,14 @@ impl<'a, T> Iterator for Iter<'a, T> {
 
 impl<'a, T> IntoIterator for &'a List<T> {
     type Item = &'a T;
-    type IntoIter = Iter<'a, T>;
+    type IntoIter = IntoIter<Option<&'a Node<T>>>;
     fn into_iter(self) -> Self::IntoIter {
         self.iter()
     }
 }
 
-pub struct IterMut<'a, T>(Option<&'a mut Node<T>>);
-
-impl<'a, T> Iterator for IterMut<'a, T> {
+// for i in &mut list
+impl<'a, T> Iterator for IntoIter<Option<&'a mut Node<T>>> {
     type Item = &'a mut T;
     fn next(&mut self) -> Option<Self::Item> {
         self.0.take().map(|Node(node)| {
@@ -66,15 +66,14 @@ impl<'a, T> Iterator for IterMut<'a, T> {
 
 impl<'a, T> IntoIterator for &'a mut List<T> {
     type Item = &'a mut T;
-    type IntoIter = IterMut<'a, T>;
+    type IntoIter = IntoIter<Option<&'a mut Node<T>>>;
     fn into_iter(self) -> Self::IntoIter {
         self.iter_mut()
     }
 }
 
-pub struct IntoIter<T>(List<T>);
-
-impl<T> Iterator for IntoIter<T> {
+// for i in list
+impl<T> Iterator for IntoIter<List<T>> {
     type Item = T;
     fn next(&mut self) -> Option<Self::Item> {
         self.0.pop()
@@ -83,12 +82,13 @@ impl<T> Iterator for IntoIter<T> {
 
 impl<T> IntoIterator for List<T> {
     type Item = T;
-    type IntoIter = IntoIter<T>;
+    type IntoIter = IntoIter<List<T>>;
     fn into_iter(self) -> Self::IntoIter {
         IntoIter(self)
     }
 }
 
+// drop
 impl<T> Drop for List<T> {
     fn drop(&mut self) {
         let mut next = self.0.take();
